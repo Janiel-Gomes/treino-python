@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Exercícios de Python básico com editor, execução no navegador e correção automática.">
+<title>Treino de Python</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: lista de exercicios a esquerda, folha de trabalho (enunciado, editor, saida) a direita; no celular a lista vira uma fileira de numeros. */
+:root {
+  --bg: #EDF0EC;
+  --surface: #F8FAF7;
+  --ink: #17211C;
+  --muted: #55665C;
+  --line: #CDD6CF;
+  --accent: #1B6B50;
+  --accent-ink: #FFFFFF;
+  --mark: #F3C63A;
+  --ok: #17734A;
+  --bad: #B3341F;
+  --term-bg: #16201B;
+  --term-fg: #D8E6DD;
+  --term-muted: #86998D;
+  --term-bad: #FF9A86;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1512; --surface: #151E1A; --ink: #E2EAE4; --muted: #95A69B; --line: #27342D;
+    --accent: #4FC59A; --accent-ink: #06130E; --mark: #E7BA2F; --ok: #56D39A; --bad: #FF9A86;
+    --term-bg: #0A100D; --term-fg: #D8E6DD; --term-muted: #7E9387; --term-bad: #FF9A86;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1512; --surface: #151E1A; --ink: #E2EAE4; --muted: #95A69B; --line: #27342D;
+  --accent: #4FC59A; --accent-ink: #06130E; --mark: #E7BA2F; --ok: #56D39A; --bad: #FF9A86;
+  --term-bg: #0A100D; --term-fg: #D8E6DD; --term-muted: #7E9387; --term-bad: #FF9A86;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+code, kbd { font-family: var(--font-mono); font-size: .9em; background: color-mix(in srgb, var(--accent) 12%, transparent); padding: .08em .35em; border-radius: 4px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* topo */
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.7rem, 4vw, 2.3rem); letter-spacing: -.02em; line-height: 1.05; margin: 0; }
+h1 span { background: linear-gradient(transparent 62%, var(--mark) 62%, var(--mark) 92%, transparent 92%); }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 46ch; }
+.progress { min-width: min(100%, 240px); }
+.progress-label { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .4s ease; }
+
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
+
+/* lista */
+.list { display: block; }
+.list ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.group { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px; padding-left: 10px; list-style: none; }
+.group:first-child { margin-top: 0; }
+.item { width: 100%; text-align: left; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; }
+.item:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.item[aria-current="true"] { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.num { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; font-family: var(--font-mono); font-size: .8rem; border: 1.5px solid var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+.item.done .num { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.item-title { min-width: 0; font-weight: 500; line-height: 1.25; }
+
+/* folha */
+.sheet { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 16px; }
+.eyebrow { font-size: .75rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h2 { font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 1.8rem); line-height: 1.15; letter-spacing: -.015em; margin: 2px 0 0; text-wrap: balance; }
+.statement { max-width: 68ch; }
+.statement p { margin: 0 0 .6em; }
+.statement ul { margin: 0; padding-left: 1.2em; }
+.example { font-family: var(--font-mono); font-size: .86rem; background: color-mix(in srgb, var(--ink) 6%, transparent); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-x: auto; margin: .4em 0 0; }
+details { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+details summary { cursor: pointer; font-weight: 500; }
+details[open] summary { margin-bottom: 8px; }
+details pre { margin: 0; font-family: var(--font-mono); font-size: .86rem; overflow-x: auto; white-space: pre; }
+.helpers { display: flex; flex-wrap: wrap; gap: 8px; }
+.helpers details { flex: 1 1 260px; min-width: 0; }
+
+/* editor */
+.editor { display: grid; grid-template-columns: auto minmax(0, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg); }
+.gutter { margin: 0; padding: 12px 8px 12px 12px; text-align: right; font-family: var(--font-mono); font-size: 14px; line-height: 21px; color: var(--muted); background: color-mix(in srgb, var(--ink) 4%, transparent); user-select: none; overflow: hidden; border-right: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+textarea#code { display: block; width: 100%; min-height: 252px; height: 252px; resize: vertical; border: 0; padding: 12px; font-family: var(--font-mono); font-size: 14px; line-height: 21px; background: transparent; color: var(--ink); white-space: pre; overflow: auto; tab-size: 4; }
+textarea#code:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { border: 1.5px solid var(--line); background: transparent; padding: 9px 16px; border-radius: 8px; font-weight: 600; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.status { margin-left: auto; font-size: .85rem; color: var(--muted); }
+kbd { font-size: .75rem; }
+
+/* saida */
+.out-label { font-size: .75rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+#out { margin: 0; background: var(--term-bg); color: var(--term-fg); font-family: var(--font-mono); font-size: 14px; line-height: 21px; padding: 12px; border-radius: 10px; min-height: 96px; max-height: 340px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+#out .hint { color: var(--term-muted); }
+#out .err { color: var(--term-bad); }
+#out input { font: inherit; color: var(--term-fg); background: transparent; border: 0; border-bottom: 1.5px solid var(--mark); outline: none; width: 14ch; min-width: 4ch; padding: 0 2px; }
+
+/* testes */
+.tests { display: grid; gap: 8px; }
+.banner { border-radius: 10px; padding: 12px 14px; font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; justify-content: space-between; }
+.banner.ok { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.banner.bad { background: color-mix(in srgb, var(--bad) 13%, transparent); color: var(--bad); }
+.case { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: .9rem; }
+.pill { font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; align-self: start; }
+.pill.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.pill.bad { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+.case dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; }
+.case dt { color: var(--muted); }
+.case dd { margin: 0; font-family: var(--font-mono); font-size: .85rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.note { color: var(--muted); font-size: .85rem; margin: 0; }
+
+@media (max-width: 780px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .list ol { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+  .list .group { display: none; }
+  .item { width: auto; flex: none; padding: 4px; }
+  .item-title { display: none; }
+  .num { width: 36px; height: 36px; }
+  .sheet { padding: 16px; }
+  .status { margin-left: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+
+<style>
+:root { color-scheme: light; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Treino de <span>Python</span></h1>
+      <p class="sub">Escreva o código, execute aqui mesmo e confira se a resposta está certa. Nada para instalar.</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="progress-label"><span id="progress-text">0 de 20 concluídos</span><span id="engine">Carregando Python…</span></div>
+      <div class="bar"><i id="progress-bar"></i></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="list" aria-label="Exercícios"><ol id="list"></ol></nav>
+
+    <main class="sheet">
+      <div>
+        <p class="eyebrow" id="ex-group"></p>
+        <h2 id="ex-title"></h2>
+      </div>
+      <div class="statement" id="ex-statement"></div>
+      <div class="helpers" id="helpers"></div>
+
+      <div class="editor">
+        <pre class="gutter" id="gutter" aria-hidden="true">1</pre>
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Editor de código Python"></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="btn-run">Executar</button>
+        <button class="btn" id="btn-check">Verificar resposta</button>
+        <button class="btn" id="btn-stop" hidden>Parar</button>
+        <button class="btn" id="btn-reset">Restaurar modelo</button>
+        <span class="status"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> executa</span>
+      </div>
+
+      <div>
+        <p class="out-label">Saída</p>
+        <pre id="out" role="log" aria-live="polite"></pre>
+      </div>
+      <div class="tests" id="tests" aria-live="polite"></div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.2.0/skulpt-stdlib.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var EXERCISES = [
+    {
+      id: 0, grupo: "Livre", titulo: "Caderno livre", livre: true,
+      enunciado: "<p>Um espaço para testar qualquer ideia. Aqui não existe certo ou errado, só você e o Python.</p><p>Experimente trocar o nome, mudar o número ou escrever outro <code>for</code>.</p>",
+      modelo: "nome = input(\"Qual é o seu nome? \")\nprint(\"Olá,\", nome)\n\nfor i in range(3):\n    print(\"Linha\", i + 1)\n",
+      dica: "Use <code>print()</code> para mostrar valores e <code>input()</code> para perguntar algo. Cada bloco depois de dois-pontos fica com 4 espaços de recuo.",
+      solucao: null, testes: []
+    },
+    {
+      id: 1, grupo: "Primeiros passos", titulo: "Olá, mundo",
+      enunciado: "<p>O comando <code>print()</code> mostra texto na tela. O texto vai entre aspas.</p><p>Escreva um programa que mostre exatamente:</p><pre class=\"example\">Olá, mundo!</pre>",
+      modelo: "# escreva seu código abaixo\n",
+      dica: "<code>print(\"texto aqui\")</code>. Confira a pontuação e a letra maiúscula.",
+      solucao: "print(\"Olá, mundo!\")",
+      testes: [{ entrada: [], saida: "Olá, mundo!" }]
+    },
+    {
+      id: 2, grupo: "Primeiros passos", titulo: "Guardando valores",
+      enunciado: "<p>Variáveis guardam valores. As duas primeiras linhas já estão prontas.</p><p>Mostre uma frase usando as variáveis, assim:</p><pre class=\"example\">Maria tem 20 anos</pre><p>O <code>print</code> aceita vários itens separados por vírgula e coloca um espaço entre eles.</p>",
+      modelo: "nome = \"Maria\"\nidade = 20\n\n# mostre a frase usando nome e idade\n",
+      dica: "<code>print(nome, \"tem\", idade, \"anos\")</code>",
+      solucao: "nome = \"Maria\"\nidade = 20\nprint(nome, \"tem\", idade, \"anos\")",
+      testes: [{ entrada: [], saida: "Maria tem 20 anos" }]
+    },
+    {
+      id: 3, grupo: "Entrada e contas", titulo: "Soma de dois números",
+      enunciado: "<p>Leia dois números inteiros e mostre a soma deles.</p><p>O <code>input()</code> devolve texto. Use <code>int()</code> para transformar em número.</p><pre class=\"example\">Entrada: 3 e 4\nSaída:   7</pre>",
+      modelo: "a = int(input())\nb = int(input())\n\n# mostre a soma\n",
+      dica: "Some as duas variáveis dentro do print: <code>print(a + b)</code>.",
+      solucao: "a = int(input())\nb = int(input())\nprint(a + b)",
+      testes: [{ entrada: ["3", "4"], saida: "7" }, { entrada: ["10", "25"], saida: "35" }, { entrada: ["-2", "2"], saida: "0" }]
+    },
+    {
+      id: 4, grupo: "Entrada e contas", titulo: "Média de três notas",
+      enunciado: "<p>Leia três notas inteiras e mostre a média. Some tudo e divida por 3. O resultado da divisão com <code>/</code> sempre é decimal.</p><pre class=\"example\">Entrada: 6, 8 e 10\nSaída:   8.0</pre>",
+      modelo: "n1 = int(input())\nn2 = int(input())\nn3 = int(input())\n\n# calcule e mostre a média\n",
+      dica: "Use parênteses para somar antes de dividir: <code>(n1 + n2 + n3) / 3</code>.",
+      solucao: "n1 = int(input())\nn2 = int(input())\nn3 = int(input())\nprint((n1 + n2 + n3) / 3)",
+      testes: [{ entrada: ["6", "8", "10"], saida: "8.0" }, { entrada: ["5", "5", "5"], saida: "5.0" }, { entrada: ["7", "8", "9"], saida: "8.0" }]
+    },
+    {
+      id: 0, grupo: "Entrada e contas", titulo: "Celsius para Fahrenheit",
+      enunciado: "<p>Leia uma temperatura em graus Celsius (inteiro) e mostre em Fahrenheit.</p><p>A fórmula é <code>F = C × 9 / 5 + 32</code>.</p><pre class=\"example\">Entrada: 100\nSaída:   212.0</pre>",
+      modelo: "c = int(input())\n\n# calcule e mostre a temperatura em Fahrenheit\n",
+      solucao: "c = int(input())\nprint(c * 9 / 5 + 32)",
+      testes: [{"entrada": ["100"], "saida": "212.0"}, {"entrada": ["0"], "saida": "32.0"}, {"entrada": ["20"], "saida": "68.0"}, {"entrada": ["-40"], "saida": "-40.0"}]
+    },
+    {
+      id: 5, grupo: "Entrada e contas", titulo: "Brincando com texto",
+      enunciado: "<p>Leia uma palavra. Mostre, em duas linhas, a palavra em letras maiúsculas e a quantidade de letras dela.</p><pre class=\"example\">Entrada: ana\nSaída:\nANA\n3</pre>",
+      modelo: "palavra = input()\n\n# linha 1: palavra em maiúsculas\n# linha 2: quantidade de letras\n",
+      dica: "Textos têm o método <code>.upper()</code> e a função <code>len()</code> conta os caracteres.",
+      solucao: "palavra = input()\nprint(palavra.upper())\nprint(len(palavra))",
+      testes: [{ entrada: ["ana"], saida: "ANA\n3" }, { entrada: ["Python"], saida: "PYTHON\n6" }, { entrada: ["sol"], saida: "SOL\n3" }]
+    },
+    {
+      id: 6, grupo: "Decisões", titulo: "Par ou ímpar",
+      enunciado: "<p>Leia um número inteiro. Se ele for par, mostre <code>par</code>. Se não, mostre <code>ímpar</code>.</p><p>Um número é par quando o resto da divisão por 2 é zero. O resto se calcula com <code>%</code>.</p>",
+      modelo: "n = int(input())\n\n# use if e else\n",
+      dica: "<code>if n % 2 == 0:</code> abre o caso do par. Lembre dos dois-pontos e do recuo de 4 espaços.",
+      solucao: "n = int(input())\nif n % 2 == 0:\n    print(\"par\")\nelse:\n    print(\"ímpar\")",
+      testes: [{ entrada: ["4"], saida: "par" }, { entrada: ["7"], saida: "ímpar" }, { entrada: ["0"], saida: "par" }]
+    },
+    {
+      id: 7, grupo: "Decisões", titulo: "Situação do aluno",
+      enunciado: "<p>Leia uma nota de 0 a 10 e mostre:</p><ul><li><code>Aprovado</code> se a nota for 7 ou mais</li><li><code>Recuperação</code> se for de 5 até menos de 7</li><li><code>Reprovado</code> se for menor que 5</li></ul>",
+      modelo: "nota = int(input())\n\n# use if, elif e else\n",
+      dica: "Teste do maior para o menor: primeiro <code>nota &gt;= 7</code>, depois <code>elif nota &gt;= 5</code>, e o resto cai no <code>else</code>.",
+      solucao: "nota = int(input())\nif nota >= 7:\n    print(\"Aprovado\")\nelif nota >= 5:\n    print(\"Recuperação\")\nelse:\n    print(\"Reprovado\")",
+      testes: [{ entrada: ["8"], saida: "Aprovado" }, { entrada: ["7"], saida: "Aprovado" }, { entrada: ["6"], saida: "Recuperação" }, { entrada: ["5"], saida: "Recuperação" }, { entrada: ["3"], saida: "Reprovado" }]
+    },
+    {
+      id: 0, grupo: "Decisões", titulo: "Ano bissexto",
+      enunciado: "<p>Leia um ano e mostre <code>bissexto</code> ou <code>não bissexto</code>.</p><p>Um ano é bissexto se for divisível por 4 e não for divisível por 100, ou então se for divisível por 400. Por exemplo, 2024 e 2000 são bissextos, mas 1900 não é.</p>",
+      modelo: "ano = int(input())\n\n# use if, and e or\n",
+      solucao: "ano = int(input())\nif (ano % 4 == 0 and ano % 100 != 0) or ano % 400 == 0:\n    print(\"bissexto\")\nelse:\n    print(\"não bissexto\")",
+      testes: [{"entrada": ["2024"], "saida": "bissexto"}, {"entrada": ["1900"], "saida": "não bissexto"}, {"entrada": ["2000"], "saida": "bissexto"}, {"entrada": ["2023"], "saida": "não bissexto"}]
+    },
+    {
+      id: 8, grupo: "Repetição", titulo: "Contagem de 1 a 5",
+      enunciado: "<p>Use um <code>for</code> para mostrar os números de 1 a 5, um por linha.</p><p><code>range(1, 6)</code> gera os números de 1 até 5. O último valor nunca entra.</p>",
+      modelo: "# faça a contagem com for\n",
+      dica: "<code>for i in range(1, 6):</code> e dentro do bloco <code>print(i)</code>.",
+      solucao: "for i in range(1, 6):\n    print(i)",
+      testes: [{ entrada: [], saida: "1\n2\n3\n4\n5" }]
+    },
+    {
+      id: 9, grupo: "Repetição", titulo: "Tabuada",
+      enunciado: "<p>Leia um número e mostre a tabuada dele de 1 a 10, neste formato:</p><pre class=\"example\">Entrada: 3\nSaída:\n3 x 1 = 3\n3 x 2 = 6\n...\n3 x 10 = 30</pre>",
+      modelo: "n = int(input())\n\n# repita 10 vezes\n",
+      dica: "<code>print(n, \"x\", i, \"=\", n * i)</code> dentro de um <code>for i in range(1, 11):</code>.",
+      solucao: "n = int(input())\nfor i in range(1, 11):\n    print(n, \"x\", i, \"=\", n * i)",
+      testes: [
+        { entrada: ["3"], saida: "3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30" },
+        { entrada: ["7"], saida: "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35\n7 x 6 = 42\n7 x 7 = 49\n7 x 8 = 56\n7 x 9 = 63\n7 x 10 = 70" }
+      ]
+    },
+    {
+      id: 0, grupo: "Repetição", titulo: "Soma de 1 até n",
+      enunciado: "<p>Leia um número inteiro <code>n</code> e mostre a soma de todos os inteiros de 1 até n.</p><pre class=\"example\">Entrada: 5\nSaída:   15   (1 + 2 + 3 + 4 + 5)</pre>",
+      modelo: "n = int(input())\nsoma = 0\n\n# some cada número de 1 até n\n\nprint(soma)\n",
+      solucao: "n = int(input())\nsoma = 0\nfor i in range(1, n + 1):\n    soma = soma + i\nprint(soma)",
+      testes: [{"entrada": ["5"], "saida": "15"}, {"entrada": ["1"], "saida": "1"}, {"entrada": ["10"], "saida": "55"}, {"entrada": ["100"], "saida": "5050"}]
+    },
+    {
+      id: 10, grupo: "Repetição", titulo: "Somar até zero",
+      enunciado: "<p>Leia números inteiros, um por linha, e some todos. Quando o número lido for <code>0</code>, pare e mostre a soma. O zero não entra na soma.</p><pre class=\"example\">Entrada: 5, 3, 2, 0\nSaída:   10</pre>",
+      modelo: "soma = 0\nn = int(input())\n\n# repita enquanto n for diferente de 0\n\nprint(soma)\n",
+      dica: "<code>while n != 0:</code> soma o valor e lê o próximo número dentro do bloco.",
+      solucao: "soma = 0\nn = int(input())\nwhile n != 0:\n    soma = soma + n\n    n = int(input())\nprint(soma)",
+      testes: [{ entrada: ["5", "3", "2", "0"], saida: "10" }, { entrada: ["0"], saida: "0" }, { entrada: ["10", "-4", "1", "0"], saida: "7" }]
+    },
+    {
+      id: 0, grupo: "Repetição", titulo: "Contar vogais",
+      enunciado: "<p>Leia uma palavra em letras minúsculas e sem acento. Mostre quantas vogais (<code>a e i o u</code>) ela tem.</p><p>Um <code>for</code> percorre o texto letra por letra: <code>for letra in palavra:</code>. E <code>letra in \"aeiou\"</code> responde se a letra é uma vogal.</p><pre class=\"example\">Entrada: banana\nSaída:   3</pre>",
+      modelo: "palavra = input()\ncontador = 0\n\n# percorra cada letra da palavra\n\nprint(contador)\n",
+      solucao: "palavra = input()\ncontador = 0\nfor letra in palavra:\n    if letra in \"aeiou\":\n        contador = contador + 1\nprint(contador)",
+      testes: [{"entrada": ["banana"], "saida": "3"}, {"entrada": ["python"], "saida": "1"}, {"entrada": ["sky"], "saida": "0"}, {"entrada": ["aeiou"], "saida": "5"}]
+    },
+    {
+      id: 11, grupo: "Listas e funções", titulo: "Maior e soma da lista",
+      enunciado: "<p>O programa lê uma linha com números separados por espaço e já monta a lista. Mostre, em duas linhas, o maior número e a soma de todos.</p><pre class=\"example\">Entrada: 4 9 2 7 15 1\nSaída:\n15\n38</pre>",
+      modelo: "numeros = list(map(int, input().split()))\n\n# linha 1: o maior\n# linha 2: a soma\n",
+      dica: "O Python já tem <code>max(lista)</code> e <code>sum(lista)</code>.",
+      solucao: "numeros = list(map(int, input().split()))\nprint(max(numeros))\nprint(sum(numeros))",
+      testes: [{ entrada: ["4 9 2 7 15 1"], saida: "15\n38" }, { entrada: ["3 3"], saida: "3\n6" }, { entrada: ["-5 -2 -9"], saida: "-2\n-16" }]
+    },
+    {
+      id: 0, grupo: "Listas e funções", titulo: "Ordenar a lista",
+      enunciado: "<p>Leia uma linha com números separados por espaço e mostre os números em ordem crescente, na mesma linha, separados por espaço.</p><p><code>sorted(lista)</code> devolve a lista ordenada. Para juntar em um texto único, use <code>\" \".join(map(str, lista))</code>.</p><pre class=\"example\">Entrada: 5 2 9 1\nSaída:   1 2 5 9</pre>",
+      modelo: "numeros = list(map(int, input().split()))\n\n# ordene e mostre em uma linha\n",
+      solucao: "numeros = list(map(int, input().split()))\nordenados = sorted(numeros)\nprint(\" \".join(map(str, ordenados)))",
+      testes: [{"entrada": ["5 2 9 1"], "saida": "1 2 5 9"}, {"entrada": ["3 3 1"], "saida": "1 3 3"}, {"entrada": ["10 -1 4"], "saida": "-1 4 10"}]
+    },
+    {
+      id: 0, grupo: "Listas e funções", titulo: "Preços em um dicionário",
+      enunciado: "<p>Um dicionário liga uma chave a um valor. Aqui a chave é o nome do produto e o valor é o preço.</p><p>Leia o nome de um produto. Se ele estiver no dicionário, mostre o preço. Se não, mostre <code>não temos</code>. Para saber se uma chave existe, use <code>if item in precos:</code>.</p>",
+      modelo: "precos = {\"maçã\": 3, \"pão\": 2, \"leite\": 5}\nitem = input()\n\n# mostre o preço ou \"não temos\"\n",
+      solucao: "precos = {\"maçã\": 3, \"pão\": 2, \"leite\": 5}\nitem = input()\nif item in precos:\n    print(precos[item])\nelse:\n    print(\"não temos\")",
+      testes: [{"entrada": ["pão"], "saida": "2"}, {"entrada": ["leite"], "saida": "5"}, {"entrada": ["maçã"], "saida": "3"}, {"entrada": ["queijo"], "saida": "não temos"}]
+    },
+    {
+      id: 12, grupo: "Listas e funções", titulo: "Função fatorial",
+      enunciado: "<p>O fatorial de 5 é <code>5 × 4 × 3 × 2 × 1 = 120</code>. O fatorial de 0 é 1.</p><p>Complete a função <code>fatorial(n)</code> para que ela devolva o resultado com <code>return</code>. O resto do programa já está pronto.</p>",
+      modelo: "def fatorial(n):\n    resultado = 1\n    # multiplique resultado por cada número de 2 até n\n    return resultado\n\nn = int(input())\nprint(fatorial(n))\n",
+      dica: "<code>for i in range(2, n + 1):</code> e dentro <code>resultado = resultado * i</code>.",
+      solucao: "def fatorial(n):\n    resultado = 1\n    for i in range(2, n + 1):\n        resultado = resultado * i\n    return resultado\n\nn = int(input())\nprint(fatorial(n))",
+      testes: [{ entrada: ["5"], saida: "120" }, { entrada: ["0"], saida: "1" }, { entrada: ["3"], saida: "6" }, { entrada: ["8"], saida: "40320" }]
+    },
+    {
+      id: 0, grupo: "Listas e funções", titulo: "Número primo",
+      enunciado: "<p>Um número é primo quando só é divisível por 1 e por ele mesmo. Os números menores que 2 não são primos.</p><p>Complete a função <code>eh_primo(n)</code>. Ela deve devolver <code>False</code> se encontrar algum divisor entre 2 e n - 1, e <code>True</code> se não encontrar. O resto do programa já está pronto.</p>",
+      modelo: "def eh_primo(n):\n    if n < 2:\n        return False\n    # teste os divisores de 2 até n - 1\n    return True\n\nn = int(input())\nif eh_primo(n):\n    print(\"primo\")\nelse:\n    print(\"não primo\")\n",
+      solucao: "def eh_primo(n):\n    if n < 2:\n        return False\n    for d in range(2, n):\n        if n % d == 0:\n            return False\n    return True\n\nn = int(input())\nif eh_primo(n):\n    print(\"primo\")\nelse:\n    print(\"não primo\")",
+      testes: [{"entrada": ["7"], "saida": "primo"}, {"entrada": ["1"], "saida": "não primo"}, {"entrada": ["10"], "saida": "não primo"}, {"entrada": ["2"], "saida": "primo"}, {"entrada": ["13"], "saida": "primo"}]
+    },
+    {
+      id: 13, grupo: "Desafio", titulo: "Fizz e Buzz",
+      enunciado: "<p>Mostre os números de 1 a 15, um por linha, com estas trocas:</p><ul><li>múltiplo de 3: mostre <code>Fizz</code></li><li>múltiplo de 5: mostre <code>Buzz</code></li><li>múltiplo de 3 e de 5 ao mesmo tempo: mostre <code>FizzBuzz</code></li></ul><p>Cuidado com a ordem dos testes.</p>",
+      modelo: "# desafio final\n",
+      dica: "Teste primeiro o caso dos dois juntos: <code>if i % 15 == 0:</code>. Depois <code>elif i % 3 == 0</code>, <code>elif i % 5 == 0</code> e por fim <code>else</code>.",
+      solucao: "for i in range(1, 16):\n    if i % 15 == 0:\n        print(\"FizzBuzz\")\n    elif i % 3 == 0:\n        print(\"Fizz\")\n    elif i % 5 == 0:\n        print(\"Buzz\")\n    else:\n        print(i)",
+      testes: [{ entrada: [], saida: "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz" }]
+    }
+  ];
+
+  EXERCISES.forEach(function (e, i) { e.id = i; });
+
+  var TOTAL = EXERCISES.filter(function (e) { return !e.livre; }).length;
+  var STORE_KEY = "treino-python-v2";
+  var state = { cur: 1, codes: {}, done: {} };
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && typeof s === "object") {
+          state.cur = typeof s.cur === "number" ? s.cur : 1;
+          state.codes = s.codes || {};
+          state.done = s.done || {};
+        }
+      }
+    } catch (e) { /* sem armazenamento: segue em memória */ }
+  }
+  function saveState() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* ignora */ }
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var elList = $("list"), elCode = $("code"), elGutter = $("gutter"), elOut = $("out"), elTests = $("tests");
+  var btnRun = $("btn-run"), btnCheck = $("btn-check"), btnStop = $("btn-stop"), btnReset = $("btn-reset");
+  var running = false, engineReady = false;
+
+  function exById(id) { return EXERCISES.filter(function (e) { return e.id === id; })[0] || EXERCISES[1]; }
+  function current() { return exById(state.cur); }
+
+  /* ---------- lista e progresso ---------- */
+  function renderList() {
+    elList.innerHTML = "";
+    var lastGroup = null;
+    EXERCISES.forEach(function (ex) {
+      if (ex.grupo !== lastGroup) {
+        var g = document.createElement("li");
+        g.className = "group"; g.textContent = ex.grupo;
+        elList.appendChild(g);
+        lastGroup = ex.grupo;
+      }
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "item" + (state.done[ex.id] ? " done" : "");
+      b.setAttribute("aria-current", ex.id === state.cur ? "true" : "false");
+      b.setAttribute("aria-label", (ex.livre ? "" : "Exercício " + ex.id + ": ") + ex.titulo + (state.done[ex.id] ? " (concluído)" : ""));
+      var n = document.createElement("span");
+      n.className = "num"; n.textContent = ex.livre ? "~" : String(ex.id);
+      var t = document.createElement("span");
+      t.className = "item-title"; t.textContent = ex.titulo;
+      b.appendChild(n); b.appendChild(t);
+      b.addEventListener("click", function () { go(ex.id); });
+      li.appendChild(b);
+      elList.appendChild(li);
+    });
+    updateProgress();
+  }
+  function updateProgress() {
+    var n = Object.keys(state.done).filter(function (k) { return state.done[k] && Number(k) > 0; }).length;
+    $("progress-text").textContent = n + " de " + TOTAL + " concluídos";
+    $("progress-bar").style.width = (n / TOTAL * 100) + "%";
+  }
+
+  /* ---------- exercício ---------- */
+  function go(id) {
+    saveCurrentCode();
+    state.cur = id;
+    saveState();
+    renderExercise();
+    renderList();
+  }
+  function renderExercise() {
+    var ex = current();
+    $("ex-group").textContent = ex.livre ? "Livre" : ex.grupo + " · exercício " + ex.id + " de " + TOTAL;
+    $("ex-title").textContent = ex.titulo;
+    $("ex-statement").innerHTML = ex.enunciado;
+    var h = "";
+    if (ex.solucao) h += "<details><summary>Ver uma solução</summary><pre></pre></details>";
+    $("helpers").innerHTML = h;
+    var pre = $("helpers").querySelector("details pre");
+    if (pre && ex.solucao) pre.textContent = ex.solucao;
+    elCode.value = state.codes[ex.id] != null ? state.codes[ex.id] : ex.modelo;
+    btnCheck.hidden = !!ex.livre;
+    clearOut(); elTests.innerHTML = "";
+    if (!ex.livre) {
+      var note = document.createElement("p");
+      note.className = "note";
+      note.textContent = "Ao verificar, o programa roda com " + ex.testes.length + (ex.testes.length === 1 ? " teste" : " testes") + " e compara a saída com a esperada.";
+      elTests.appendChild(note);
+    }
+    syncGutter();
+    window.scrollTo({ top: 0 });
+  }
+  function saveCurrentCode() {
+    state.codes[state.cur] = elCode.value;
+    saveState();
+  }
+
+  /* ---------- editor ---------- */
+  function syncGutter() {
+    var lines = elCode.value.split("\n").length, s = "";
+    for (var i = 1; i <= lines; i++) s += i + (i < lines ? "\n" : "");
+    elGutter.textContent = s;
+    elGutter.scrollTop = elCode.scrollTop;
+  }
+  var saveTimer = null;
+  elCode.addEventListener("input", function () {
+    syncGutter();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveCurrentCode, 400);
+  });
+  elCode.addEventListener("scroll", function () { elGutter.scrollTop = elCode.scrollTop; });
+  elCode.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); runFree(); return; }
+    if (e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      elCode.setRangeText("    ", elCode.selectionStart, elCode.selectionEnd, "end");
+      syncGutter();
+    } else if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey && !e.metaKey && elCode.selectionStart === elCode.selectionEnd) {
+      var pos = elCode.selectionStart, v = elCode.value;
+      var lineStart = v.lastIndexOf("\n", pos - 1) + 1;
+      var line = v.slice(lineStart, pos);
+      var indent = (line.match(/^[ ]*/) || [""])[0];
+      if (/:\s*$/.test(line)) indent += "    ";
+      e.preventDefault();
+      elCode.setRangeText("\n" + indent, pos, pos, "end");
+      syncGutter();
+    }
+  });
+
+  /* ---------- saída ---------- */
+  function clearOut() { elOut.textContent = ""; }
+  function appendOut(text, cls) {
+    var s = document.createElement("span");
+    if (cls) s.className = cls;
+    s.textContent = text;
+    elOut.appendChild(s);
+    elOut.scrollTop = elOut.scrollHeight;
+  }
+  function askInput(prompt) {
+    return new Promise(function (resolve) {
+      if (prompt) appendOut(prompt);
+      var inp = document.createElement("input");
+      inp.type = "text"; inp.setAttribute("aria-label", "Digite o valor e pressione Enter");
+      inp.autocomplete = "off"; inp.spellcheck = false;
+      elOut.appendChild(inp);
+      inp.focus();
+      elOut.scrollTop = elOut.scrollHeight;
+      inp.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          var val = inp.value;
+          var span = document.createElement("span");
+          span.textContent = val + "\n";
+          elOut.replaceChild(span, inp);
+          resolve(val);
+        }
+      });
+    });
+  }
+
+  /* ---------- motor Python (Skulpt) ---------- */
+  function builtinRead(x) {
+    if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined) throw "Arquivo não encontrado: '" + x + "'";
+    return Sk.builtinFiles["files"][x];
+  }
+  function fmtErr(e) {
+    var s = (e && e.toString) ? e.toString() : String(e);
+    if (/TimeLimitError|Execution Time Limit/i.test(s)) return "O programa demorou demais e foi interrompido. Confira se há um laço que nunca termina.";
+    if (/EOFError/.test(s)) return "O programa pediu mais entradas do que foram fornecidas (EOFError).";
+    return s.replace(/ on line (\d+)/, " (linha $1)");
+  }
+  /* roda o código; devolve { out, error } */
+  function execute(code, opts) {
+    var out = "";
+    var queue = (opts.inputs || []).slice();
+    Sk.configure({
+      output: function (t) { out += t; if (opts.interactive) appendOut(t); },
+      read: builtinRead,
+      inputfunTakesPrompt: true,
+      inputfun: function (prompt) {
+        if (opts.interactive) return askInput(prompt);
+        if (!queue.length) throw new Error("EOFError: sem mais entradas");
+        return queue.shift();
+      },
+      __future__: Sk.python3,
+      execLimit: opts.interactive ? Infinity : 5000,
+      yieldLimit: 100
+    });
+    return Sk.misceval.asyncToPromise(function () {
+      return Sk.importMainWithBody("<stdin>", false, code, true);
+    }).then(function () { return { out: out, error: null }; },
+            function (e) { return { out: out, error: fmtErr(e) }; });
+  }
+
+  function setRunning(v) {
+    running = v;
+    btnRun.disabled = v || !engineReady;
+    btnCheck.disabled = v || !engineReady;
+    btnReset.disabled = v;
+    btnStop.hidden = !v;
+  }
+  function runFree() {
+    if (running || !engineReady) return;
+    saveCurrentCode();
+    clearOut(); elTests.innerHTML = "";
+    setRunning(true);
+    execute(elCode.value, { interactive: true }).then(function (r) {
+      if (r.error) appendOut((elOut.textContent && !/\n$/.test(elOut.textContent) ? "\n" : "") + r.error + "\n", "err");
+      else if (!elOut.textContent) appendOut("(o programa terminou sem mostrar nada)", "hint");
+      setRunning(false);
+    });
+  }
+  btnStop.addEventListener("click", function () {
+    try { Sk.execLimit = 1; } catch (e) { /* ignora */ }
+  });
+
+  /* ---------- verificação ---------- */
+  function norm(s) {
+    return s.replace(/\r/g, "").split("\n").map(function (l) { return l.replace(/\s+$/, ""); }).join("\n").replace(/^\n+|\n+$/g, "");
+  }
+  function check() {
+    var ex = current();
+    if (running || !engineReady || ex.livre) return;
+    saveCurrentCode();
+    clearOut(); elTests.innerHTML = "";
+    setRunning(true);
+    var results = [];
+    var code = elCode.value;
+    var chain = Promise.resolve();
+    ex.testes.forEach(function (t) {
+      chain = chain.then(function () {
+        return execute(code, { inputs: t.entrada, interactive: false }).then(function (r) {
+          var ok = !r.error && norm(r.out) === norm(t.saida);
+          results.push({ t: t, r: r, ok: ok });
+        });
+      });
+    });
+    chain.then(function () {
+      showResults(ex, results);
+      setRunning(false);
+    });
+  }
+  function showResults(ex, results) {
+    elTests.innerHTML = "";
+    var passed = results.filter(function (x) { return x.ok; }).length;
+    var all = passed === results.length;
+    var banner = document.createElement("div");
+    banner.className = "banner " + (all ? "ok" : "bad");
+    var msg = document.createElement("span");
+    msg.textContent = all ? "Certo! Passou em " + passed + " de " + results.length + " testes." : "Passou em " + passed + " de " + results.length + " testes. Veja o que diferiu abaixo.";
+    banner.appendChild(msg);
+    if (all) {
+      state.done[ex.id] = true;
+      saveState(); renderList();
+      var next = EXERCISES.filter(function (e) { return e.id === ex.id + 1; })[0];
+      if (next) {
+        var nb = document.createElement("button");
+        nb.type = "button"; nb.className = "btn primary"; nb.textContent = "Próximo exercício";
+        nb.addEventListener("click", function () { go(next.id); });
+        banner.appendChild(nb);
+      } else {
+        msg.textContent += " Você terminou todos os exercícios!";
+      }
+    }
+    elTests.appendChild(banner);
+    results.forEach(function (x, i) {
+      var c = document.createElement("div"); c.className = "case";
+      var p = document.createElement("span"); p.className = "pill " + (x.ok ? "ok" : "bad"); p.textContent = x.ok ? "ok" : "falhou";
+      var dl = document.createElement("dl");
+      function row(k, v) {
+        var dt = document.createElement("dt"); dt.textContent = k;
+        var dd = document.createElement("dd"); dd.textContent = v;
+        dl.appendChild(dt); dl.appendChild(dd);
+      }
+      row("Teste " + (i + 1), x.t.entrada.length ? "entrada: " + x.t.entrada.join(" | ") : "sem entrada");
+      if (!x.ok) {
+        row("Esperado", x.t.saida);
+        row("Obtido", x.r.out ? x.r.out.replace(/\n+$/, "") : "(nada)");
+        if (x.r.error) row("Erro", x.r.error);
+      }
+      c.appendChild(p); c.appendChild(dl);
+      elTests.appendChild(c);
+    });
+    var n = document.createElement("p"); n.className = "note";
+    n.textContent = "Durante a verificação, os textos de pergunta do input() não entram na comparação.";
+    elTests.appendChild(n);
+    // mostra a saída do primeiro teste que falhou, ou do primeiro, no painel
+    var show = results.filter(function (x) { return !x.ok; })[0] || results[0];
+    if (show) {
+      appendOut(show.r.out || "");
+      if (show.r.error) appendOut("\n" + show.r.error + "\n", "err");
+    }
+  }
+
+  btnRun.addEventListener("click", runFree);
+  btnCheck.addEventListener("click", check);
+  btnReset.addEventListener("click", function () {
+    var ex = current();
+    elCode.value = ex.modelo;
+    state.codes[ex.id] = ex.modelo;
+    saveState(); syncGutter(); clearOut(); elTests.innerHTML = "";
+    elCode.focus();
+  });
+
+  /* ---------- início ---------- */
+  loadState();
+  if (!exById(state.cur)) state.cur = 1;
+  renderList();
+  renderExercise();
+  setRunning(false);
+
+  var tries = 0;
+  (function waitEngine() {
+    if (typeof Sk !== "undefined" && Sk.builtinFiles) {
+      engineReady = true;
+      $("engine").textContent = "Python pronto";
+      setRunning(false);
+    } else if (tries++ < 100) {
+      setTimeout(waitEngine, 150);
+    } else {
+      $("engine").textContent = "Não foi possível carregar o Python";
+      appendOut("O interpretador não carregou. Recarregue a página e confira sua conexão.", "err");
+    }
+  })();
+})();
+</script>
+</body>
+</html>
